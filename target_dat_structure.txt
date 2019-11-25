@@ -1,2 +1,2 @@
-{ "_id": mongo_id, "recipe_name": "recipe_name", "serves": int, "ingredients": [{"quantity": int, "units": string, "ingredient": string, "form": string }], "method":["step_num": int, "step_text": string }]}
+{ "_id": mongo_id, "recipe_name": "recipe_name", "serves": int, "ingredients": [{"quantity": int, "units": string, "ingredient": string, "form": string }], "method":[{"step_num": int, "step_text": string }]}
   
