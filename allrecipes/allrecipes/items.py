@@ -7,7 +7,6 @@
 
 import scrapy
 
-
 class Recipe_item(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()

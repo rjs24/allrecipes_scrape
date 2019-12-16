@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from .local_settings import *
 # Scrapy settings for allrecipes project
 #
 # For simplicity, this file contains only settings considered important or
@@ -27,10 +27,10 @@ ROBOTSTXT_OBEY = True
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 5
+DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 4
-CONCURRENT_REQUESTS_PER_IP = 4
+CONCURRENT_REQUESTS_PER_DOMAIN = 8
+CONCURRENT_REQUESTS_PER_IP = 8
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -46,9 +46,10 @@ CONCURRENT_REQUESTS_PER_IP = 4
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    'allrecipes.middlewares.AllrecipesSpiderMiddleware': 543,
-#}
+SPIDER_MIDDLEWARES = {
+   'allrecipes.middlewares.AllrecipesSpiderMiddleware': 543,
+    'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': None,
+}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -64,15 +65,15 @@ CONCURRENT_REQUESTS_PER_IP = 4
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'allrecipes.pipelines.AllrecipesPipeline': 300,
-#}
+ITEM_PIPELINES = {
+    'allrecipes.pipelines.AllrecipesPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 3
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
