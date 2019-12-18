@@ -8,7 +8,6 @@ import pymongo
 from scrapy.conf import settings
 from scrapy import log
 
-
 class AllrecipesPipeline(object):
 
     def __init__(self):

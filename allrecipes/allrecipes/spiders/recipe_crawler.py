@@ -8,8 +8,6 @@ from scrapy import Spider
 import scrapy
 from ..items import Recipe_item
 import time
-import re
-
 
 class RecipeCrawlerSpider(scrapy.Spider):
     name = 'recipe_crawler'

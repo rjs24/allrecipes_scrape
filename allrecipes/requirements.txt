@@ -1,0 +1,6 @@
+Scrapy==1.6.0
+selenium==3.141.0
+pymongo==3.9.0
+scrapoxy==1.11
+
+

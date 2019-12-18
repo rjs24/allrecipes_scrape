@@ -9,6 +9,12 @@ from .local_settings import *
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
+#DB settings
+
+#MONGODB_PORT=27017
+#MONGODB_DB='db_name'
+#MONGODB_URI="mongodb://username:password@ip_address:27017/admin"
+
 BOT_NAME = 'allrecipes'
 
 SPIDER_MODULES = ['allrecipes.spiders']
@@ -27,10 +33,28 @@ ROBOTSTXT_OBEY = True
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 5
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 8
-CONCURRENT_REQUESTS_PER_IP = 8
+CONCURRENT_REQUESTS_PER_DOMAIN = 2
+CONCURRENT_REQUESTS_PER_IP = 1
+
+# PROXY
+PROXY = 'http://127.0.0.1:8888/?noconnect'
+
+# SCRAPOXY
+API_SCRAPOXY = 'http://127.0.0.1:8889/api'
+#API_SCRAPOXY_PASSWORD = 'CHANGE_THIS_PASSWORD'
+
+# BLACKLISTING
+BLACKLIST_HTTP_STATUS_CODES = [ 503 ]
+
+DOWNLOADER_MIDDLEWARES = {
+    'scrapoxy.downloadmiddlewares.proxy.ProxyMiddleware': 100,
+    'scrapoxy.downloadmiddlewares.wait.WaitMiddleware': 101,
+    'scrapoxy.downloadmiddlewares.scale.ScaleMiddleware': 102,
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': None,
+    'scrapoxy.downloadmiddlewares.blacklist.BlacklistDownloaderMiddleware': 950,
+}
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -46,10 +70,9 @@ CONCURRENT_REQUESTS_PER_IP = 8
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-SPIDER_MIDDLEWARES = {
-   'allrecipes.middlewares.AllrecipesSpiderMiddleware': 543,
-    'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': None,
-}
+#SPIDER_MIDDLEWARES = {
+#    'allrecipes.middlewares.AllrecipesSpiderMiddleware': 543,
+#}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -73,7 +96,7 @@ ITEM_PIPELINES = {
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 3
+AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
