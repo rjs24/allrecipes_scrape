@@ -25,6 +25,7 @@ class AllrecipesPipeline(object):
             self.recipe_collection.insert_one(dict(item))
         except pymongo.errors.WriteError as we:
             err_string = "Record %s not added to db due to %s" % (item['recipe_name'], we)
+            print(err_string)
             log.msg("Record not added to db", level=log.DEBUG, spider=spider)
 
 
