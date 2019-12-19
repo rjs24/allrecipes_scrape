@@ -19,7 +19,7 @@ BOT_NAME = 'allrecipes'
 
 SPIDER_MODULES = ['allrecipes.spiders']
 NEWSPIDER_MODULE = 'allrecipes.spiders'
-
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'allrecipes (+http://www.yourdomain.com)'
@@ -35,15 +35,15 @@ ROBOTSTXT_OBEY = True
 # See also autothrottle settings and docs
 DOWNLOAD_DELAY = 5
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 2
-CONCURRENT_REQUESTS_PER_IP = 1
+CONCURRENT_REQUESTS_PER_DOMAIN = 8
+CONCURRENT_REQUESTS_PER_IP = 8
 
 # PROXY
 PROXY = 'http://127.0.0.1:8888/?noconnect'
 
 # SCRAPOXY
 API_SCRAPOXY = 'http://127.0.0.1:8889/api'
-#API_SCRAPOXY_PASSWORD = 'CHANGE_THIS_PASSWORD'
+API_SCRAPOXY_PASSWORD = 'CHANGE_THIS_PASSWORD'
 
 # BLACKLISTING
 BLACKLIST_HTTP_STATUS_CODES = [ 503 ]

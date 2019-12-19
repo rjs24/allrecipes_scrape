@@ -11,7 +11,7 @@ import time
 
 class RecipeCrawlerSpider(scrapy.Spider):
     name = 'recipe_crawler'
-    allowed_domains = ['allrecipes.co.uk/']
+    allowed_domains = ['allrecipes.co.uk']
     #start_urls = ["http://allrecipes.co.uk/recipes/"]
     start_urls = ['http://allrecipes.co.uk/consent/?dest=/recipes/']
 
@@ -54,20 +54,23 @@ class RecipeCrawlerSpider(scrapy.Spider):
         else:
             html_ret = response.text
             all_elements = scrapy.Selector(text=html_ret)
+            print("RESPONSE_URL:  ", response.url)
 
             if all_elements.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
                 new_url = ''.join(
                     all_elements.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1//a/@href').extract())
                 if new_url:
                     cleaned_url = new_url.replace("javascript:void(0)","")
-                    yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse)
+                    print("CATEGORY_URL:  ",cleaned_url)
+                    yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse, errback=self.error_handler)
 
             if all_elements.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
                 for recipe_links in all_elements.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
                     new_url = ''.join(recipe_links.xpath('@href').extract())
                     if new_url:
                         cleaned_url = new_url.replace("javascript:void(0)", "")
-                        yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse)
+                        print("RECIPE_URL:  ", cleaned_url)
+                        yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse, errback=self.error_handler)
                     else:
                         continue
                 next_page_url = ''.join(all_elements.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
@@ -145,3 +148,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 break
 
         return {'quantity': quantity, 'units': units, 'ingredient': ingredient, 'form': form}
+
+    def error_handler(self, failure):
+        #function to catch request errors
+        print("ERROR_HANDLER CALLED:  ",failure)
