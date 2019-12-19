@@ -10,6 +10,7 @@ from ..items import Recipe_item
 import time
 import pymongo
 from scrapy.utils.project import get_project_settings
+import sys
 
 class RecipeCrawlerSpider(scrapy.Spider):
     name = 'recipe_crawler'
@@ -52,12 +53,21 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     all_elems = scrapy.Selector(text=html)
                     for cat_links in all_elems.xpath('//*[@id="hubsSimilar"]//div//div/*'):
                         new_url = ''.join(cat_links.xpath("@href").extract())
-                        while self.scrape_govern_flag == False:
-                            time.sleep(500)
-                        else:
-                            if new_url:
-                                yield scrapy.Request(url=new_url, cookies=self.browser.get_cookies(), callback=self.parse)
-                                self.scrape_govern_flag = False
+                        if new_url:
+                            while self.scrape_govern_flag == False:
+                                if self.scrape_govern_flag == False and len(new_url) > 33:
+                                    for i in range(0, 60):
+                                        sys.stdout.write(str(i)+' ')
+                                        sys.stdout.flush()
+                                        time.sleep(i)
+                                        if self.scrape_govern_flag == True:
+                                            break
+                                        else:
+                                            continue
+                                else:
+                                    yield scrapy.Request(url=new_url, cookies=self.browser.get_cookies(), callback=self.parse)
+                                    self.scrape_govern_flag = False
+                                    break
                             else:
                                 continue
                     break
