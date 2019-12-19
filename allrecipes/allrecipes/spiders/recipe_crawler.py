@@ -10,7 +10,6 @@ from ..items import Recipe_item
 import time
 import pymongo
 from scrapy.utils.project import get_project_settings
-import sys
 
 class RecipeCrawlerSpider(scrapy.Spider):
     name = 'recipe_crawler'
@@ -24,11 +23,12 @@ class RecipeCrawlerSpider(scrapy.Spider):
         self.connection = pymongo.MongoClient(self.settings.get("MONGODB_URI"))
         self.db_connect = self.connection[self.settings.get('MONGODB_DB')]
         self.recipe_collection = self.db_connect['recipes']
-        self.scrape_govern_flag = False
         self.options = Options()
         self.options.add_argument('-headless')
         self.browser = Firefox(options=self.options)
         self.wait_period = WebDriverWait(self.browser, timeout=15)
+        self.cat_links_index = 0
+        self.cat_links_list = []
         time.sleep(5)
 
     def start_requests(self):
@@ -41,7 +41,6 @@ class RecipeCrawlerSpider(scrapy.Spider):
         if "consent" in str(response.url):
             #handle the consent button
             while "consent" in response.url:
-                self.scrape_govern_flag = True
                 try:
                     print("IN WHILE")
                     self.browser.get(response.url)
@@ -53,23 +52,15 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     all_elems = scrapy.Selector(text=html)
                     for cat_links in all_elems.xpath('//*[@id="hubsSimilar"]//div//div/*'):
                         new_url = ''.join(cat_links.xpath("@href").extract())
-                        if new_url:
-                            while self.scrape_govern_flag == False:
-                                if self.scrape_govern_flag == False and len(new_url) > 33:
-                                    for i in range(0, 60):
-                                        sys.stdout.write(str(i)+' ')
-                                        sys.stdout.flush()
-                                        time.sleep(i)
-                                        if self.scrape_govern_flag == True:
-                                            break
-                                        else:
-                                            continue
-                                else:
-                                    yield scrapy.Request(url=new_url, cookies=self.browser.get_cookies(), callback=self.parse)
-                                    self.scrape_govern_flag = False
-                                    break
-                            else:
-                                continue
+                        if new_url and len(self.cat_links_list) == 0:
+                            self.cat_links_list.append(new_url)
+                            yield scrapy.Request(url=new_url, cookies=self.browser.get_cookies(), callback=self.parse)
+                            continue
+                        elif new_url and len(self.cat_links_list) > 0:
+                            self.cat_links_list.append(new_url)
+                            continue
+                        else:
+                            continue
                     break
                 except:
                     break
@@ -108,7 +99,10 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     if cleaned_url != "":
                         yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse)
                     else:
-                        self.scrape_govern_flag = True
+                        print("END OF PAGES FOR THIS CATEGORY")
+                        self.cat_links_index += 1
+                        yield scrapy.Request(url=self.cat_links_list[self.cat_links_index], cookies=self.browser.get_cookies(), callback=self.parse)
+
 
             if all_elements.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
                 ingredients_flag = all_elements.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2/text()').extract()
