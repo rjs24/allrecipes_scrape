@@ -81,12 +81,12 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 for recipe_links in all_elements.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
                     new_url = ''.join(recipe_links.xpath('@href').extract())
                     if new_url:
-                        cleaned_url = new_url.replace("javascript:void(0)", "")
-                        print("RECIPE_URL:  ", cleaned_url)
+                        recipe_url = new_url.replace("javascript:void(0)", "")
+                        print("RECIPE_URL:  ", recipe_url)
                         try:
-                            recipe_query = self.recipe_collection.find({"url":cleaned_url})
+                            recipe_query = self.recipe_collection.find({"url":recipe_url})
                             if recipe_query.count() == 0:
-                                yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse, errback=self.error_handler)
+                                yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(), callback=self.parse, errback=self.error_handler)
                             else:
                                 continue
                         except pymongo.errors.OperationFailure as OF:
@@ -109,7 +109,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 if ingredients_flag == ['\r\n        Ingredients\r\n\r\n            ', '\r\n    ']:
                     item = Recipe_item()
                     html_xpaths_response = scrapy.Selector(response)
-
+                    item['url'] = response.url
                     recipe_nme = ''.join(html_xpaths_response.xpath(
                         '//*[@id="pageContent"]//div[2]//div//div//div[1]//div//section[1]//div//div[2]//h1//span/text()').extract())
                     item['recipe_name'] = recipe_nme.strip()
