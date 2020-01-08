@@ -68,7 +68,8 @@ class RecipeCrawlerSpider(scrapy.Spider):
     def start_requests(self):
         # implement equivalent of a crawlspider in base spider with selenium
         for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, callback=self.parse, cb_kwargs=dict(current_browser=None),
+                                 errback=self.error_handler)
 
     def xpaths_parser(self, response, browser):
         #parse through html to find xpaths and take appropriate action
