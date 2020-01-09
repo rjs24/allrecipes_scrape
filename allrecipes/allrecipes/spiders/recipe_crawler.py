@@ -28,50 +28,41 @@ class RecipeCrawlerSpider(scrapy.Spider):
         self.request_counter = 0
         self.cat_links_list = []
         self.links_list = []
-        self.kickoff_request = False
+        self.browser = None
         time.sleep(5)
 
-    def browser_starter(self):
-        #function to start a fresh headless browser
-        options = Options()
-        options.add_argument('-headless')
-        browser = Firefox(options=options)
-        wait_period = WebDriverWait(browser, timeout=15)
-        return browser, wait_period
-
-    def request_count_handler(self, browser):
+    def request_count_handler(self):
         #function to check request_count and either continue or start fresh browser
         if self.request_counter >= 50:
-            browser.close()
-            new_browser = self.browser_starter
-            return new_browser
-        elif self.request_count < 50:
-            return browser
+            self.browser.close()
+            self.browser = self.create_browser()
+            return self.browser
+        elif self.request_counter < 50:
+            return self.browser
 
     def random_sleep_generator(self):
         #quick easy function to generate random sleep when required just before requests
         rand_int = random.randint(4, 13)
         return time.sleep(rand_int)
 
-    def make_requests_from_url(self, url, curr_brows):
+    def make_requests_from_url(self, url):
         #yield a scrapy request
-        get_browser = self.request_count_handler(curr_brows)
-        browsr = get_browser[0]
+        self.request_count_handler()
         if url not in self.links_list:
             self.links_list.append(url)
             self.random_sleep_generator()
-            yield scrapy.Request(url=url, cookies=browsr.get_cookies(), callback=self.parse,
-                                 cb_kwargs=dict(current_browser=browsr), errback=self.error_handler)
+            self.request_counter += 1
+            yield scrapy.Request(url=url, cookies=self.browser.get_cookies(), callback=self.parse_response,
+                                 errback=self.error_handler)
         else:
             print("URL ALREADY SCRAPED")
 
     def start_requests(self):
         # implement equivalent of a crawlspider in base spider with selenium
         for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse, cb_kwargs=dict(current_browser=None),
-                                 errback=self.error_handler)
+            yield scrapy.Request(url=url, callback=self.parse_response, errback=self.error_handler)
 
-    def xpaths_parser(self, response, browser):
+    def xpaths_parser(self, response):
         #parse through html to find xpaths and take appropriate action
         html_ret = response.text
         html_els = scrapy.Selector(text=html_ret)
@@ -82,7 +73,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if new_url:
                 cleaned_url = new_url.replace("javascript:void(0)", "")
                 print("CATEGORY_URL:  ", cleaned_url)
-                yield self.make_requests_from_url(cleaned_url, browser)
+                yield self.make_requests_from_url(cleaned_url)
 
         if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
@@ -93,7 +84,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     try:
                         recipe_query = self.recipe_collection.find({"url": recipe_url})
                         if recipe_query.count() == 0:
-                            yield self.make_requests_from_url(recipe_url, browser)
+                            yield self.make_requests_from_url(recipe_url)
                         else:
                             continue
                     except pymongo.errors.OperationFailure as OF:
@@ -105,12 +96,12 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if next_page_url:
                 cleaned_url = next_page_url.replace("javascript:void(0)", "")
                 if cleaned_url != "":
-                    yield self.make_requests_from_url(cleaned_url, browser)
+                    yield self.make_requests_from_url(cleaned_url)
                 else:
                     print("END OF PAGES FOR THIS CATEGORY")
                     self.cat_links_index += 1
                     new_cat_link = self.cat_links_list[self.cat_links_index]
-                    yield self.make_requests_from_url(new_cat_link, browser)
+                    yield self.make_requests_from_url(new_cat_link)
 
         if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
             ingredients_flag = html_els.xpath(
@@ -145,40 +136,46 @@ class RecipeCrawlerSpider(scrapy.Spider):
 
                 yield item
 
-    def parse(self, response, current_browser):
+    def create_browser(self, url_2_get):
+        #function to startup new browser and navigate consent
+        while "consent" in url_2_get or self.request_counter >= 50:
+            try:
+                print("IN WHILE")
+                options = Options()
+                options.add_argument('-headless')
+                browser = Firefox(options=options)
+                wait_period = WebDriverWait(browser, timeout=15)
+                browser.get(url_2_get)
+                wait_period.until(
+                    expected.visibility_of_element_located(
+                        (By.CSS_SELECTOR, '#consentButtonContainer > button'))).click()
+                time.sleep(3)
+                return browser
+            except:
+                break
+
+    def parse_response(self, response):
         print("parse called: ", response.url)
-        if "consent" in str(response.url):
+        if "consent" in str(response.url) or self.request_counter >= 50:
             #handle the consent button
-            while "consent" in response.url:
-                try:
-                    print("IN WHILE")
-                    setup_browser = self.browser_starter()
-                    browser = setup_browser[0]
-                    wait_period = setup_browser[1]
-                    browser.get(response.url)
-                    wait_period.until(
-                        expected.visibility_of_element_located(
-                            (By.CSS_SELECTOR, '#consentButtonContainer > button'))).click()
-                    time.sleep(3)
-                    html = browser.page_source
-                    all_elems = scrapy.Selector(text=html)
-                    for cat_links in all_elems.xpath('//*[@id="hubsSimilar"]//div//div/*'):
-                        new_url = ''.join(cat_links.xpath("@href").extract())
-                        if new_url and new_url not in self.cat_links_list:
-                            self.cat_links_list.append(new_url)
-                        else:
-                            continue
-                    if self.kickoff_request == False:
-                        first_url = self.cat_links_list[0]
-                        yield self.make_requests_from_url(first_url, browser)
+            self.browser = self.create_browser(response.url)
+            html = self.browser.page_source
+            all_elems = scrapy.Selector(text=html)
+            if len(self.cat_links_list) == 0:
+                for cat_links in all_elems.xpath('//*[@id="hubsSimilar"]//div//div/*'):
+                    new_url = ''.join(cat_links.xpath("@href").extract())
+                    if new_url and new_url not in self.cat_links_list:
+                        self.cat_links_list.append(new_url)
                     else:
-                        yield self.make_requests_from_url(self.links_list[-1], browser)
-                    break
-                except:
-                    break
+                        continue
+                first_url = self.cat_links_list[0]
+                yield self.make_requests_from_url(first_url)
+            else:
+                self.request_counter = 0
+                yield self.make_requests_from_url(self.links_list[-1])
         else:
             print("RESPONSE_URL:  ", response.url)
-            self.xpaths_parser(response, current_browser)
+            self.xpaths_parser(response)
 
     def ingredient_processor(self, ingredients_2_process):
         #short function to process/split text extracted to quantity, ingredient and form.
