@@ -47,19 +47,6 @@ class RecipeCrawlerSpider(scrapy.Spider):
         rand_int = random.randint(2, 13)
         return time.sleep(rand_int)
 
-    def make_requests_from_url(self, url):
-        #yield a scrapy request
-        print("MAKE_REQUESTS: ", url)
-        self.request_count_handler()
-        if url not in self.links_list:
-            self.links_list.append(url)
-            self.random_sleep_generator()
-            self.request_counter += 1
-            yield scrapy.Request(url=url, cookies=self.browser.get_cookies(), callback=self.parse_response,
-                                 errback=self.error_handler)
-        else:
-            print("URL ALREADY SCRAPED")
-
     def start_requests(self):
         # implement equivalent of a crawlspider in base spider with selenium
         for url in self.start_urls:
@@ -76,7 +63,13 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if new_url:
                 cleaned_url = new_url.replace("javascript:void(0)", "")
                 print("CATEGORY_URL:  ", cleaned_url)
-                return self.make_requests_from_url(cleaned_url)
+                self.request_count_handler()
+                if cleaned_url not in self.links_list:
+                    self.links_list.append(cleaned_url)
+                    self.random_sleep_generator()
+                    self.request_counter += 1
+                    yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse_response,
+                                         errback=self.error_handler)
 
         if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
@@ -86,8 +79,14 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     print("RECIPE_URL:  ", recipe_url)
                     try:
                         recipe_query = self.recipe_collection.find({"url": recipe_url})
-                        if recipe_query.count() == 0:
-                            return self.make_requests_from_url(recipe_url)
+                        if recipe_query.count() == 0 and recipe_url not in self.links_list:
+                            self.request_count_handler()
+                            self.links_list.append(recipe_url)
+                            self.random_sleep_generator()
+                            self.request_counter += 1
+                            yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(),
+                                                 callback=self.parse_response,
+                                                 errback=self.error_handler)
                         else:
                             continue
                     except pymongo.errors.OperationFailure as OF:
@@ -98,13 +97,25 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
             if next_page_url:
                 cleaned_url = next_page_url.replace("javascript:void(0)", "")
-                if cleaned_url != "":
-                    self.make_requests_from_url(cleaned_url)
+                if cleaned_url != "" and cleaned_url not in self.links_list:
+                    self.request_count_handler()
+                    self.links_list.append(recipe_url)
+                    self.random_sleep_generator()
+                    self.request_counter += 1
+                    yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(),
+                                         callback=self.parse_response,
+                                         errback=self.error_handler)
                 else:
                     print("END OF PAGES FOR THIS CATEGORY")
                     self.cat_links_index += 1
                     new_cat_link = self.cat_links_list[self.cat_links_index]
-                    return self.make_requests_from_url(new_cat_link)
+                    self.request_count_handler()
+                    self.links_list.append(new_cat_link)
+                    self.random_sleep_generator()
+                    self.request_counter += 1
+                    yield scrapy.Request(url=new_cat_link, cookies=self.browser.get_cookies(),
+                                         callback=self.parse_response,
+                                         errback=self.error_handler)
 
         if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
             ingredients_flag = html_els.xpath(
@@ -174,9 +185,21 @@ class RecipeCrawlerSpider(scrapy.Spider):
                         continue
                 first_url = self.cat_links_list[0]
                 print("FIRST_URL:  ",first_url)
-                return self.make_requests_from_url(first_url)
+                self.request_count_handler()
+                self.links_list.append(first_url)
+                self.random_sleep_generator()
+                self.request_counter += 1
+                yield scrapy.Request(url=first_url, cookies=self.browser.get_cookies(),
+                                     callback=self.parse_response,
+                                     errback=self.error_handler)
             else:
-                return self.make_requests_from_url(self.links_list[-1])
+                self.request_count_handler()
+                self.random_sleep_generator()
+                self.request_counter += 1
+                last_url = self.links_list[-1]
+                yield scrapy.Request(url=last_url, cookies=self.browser.get_cookies(),
+                                     callback=self.parse_response,
+                                     errback=self.error_handler)
         else:
             print("RESPONSE_URL:  ", response.url)
             return self.xpaths_parser(response)
