@@ -33,20 +33,23 @@ class RecipeCrawlerSpider(scrapy.Spider):
 
     def request_count_handler(self):
         #function to check request_count and either continue or start fresh browser
+        print("REQUEST_COUNTER")
         if self.request_counter >= 50:
             self.browser.close()
-            self.browser = self.create_browser()
+            self.browser = self.create_browser(start_urls[0])
             return self.browser
         elif self.request_counter < 50:
             return self.browser
 
     def random_sleep_generator(self):
         #quick easy function to generate random sleep when required just before requests
-        rand_int = random.randint(4, 13)
+        print("NOW ASLEEP")
+        rand_int = random.randint(2, 13)
         return time.sleep(rand_int)
 
     def make_requests_from_url(self, url):
         #yield a scrapy request
+        print("MAKE_REQUESTS: ", url)
         self.request_count_handler()
         if url not in self.links_list:
             self.links_list.append(url)
@@ -73,7 +76,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if new_url:
                 cleaned_url = new_url.replace("javascript:void(0)", "")
                 print("CATEGORY_URL:  ", cleaned_url)
-                self.make_requests_from_url(cleaned_url)
+                return self.make_requests_from_url(cleaned_url)
 
         if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
@@ -84,7 +87,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     try:
                         recipe_query = self.recipe_collection.find({"url": recipe_url})
                         if recipe_query.count() == 0:
-                            self.make_requests_from_url(recipe_url)
+                            return self.make_requests_from_url(recipe_url)
                         else:
                             continue
                     except pymongo.errors.OperationFailure as OF:
@@ -101,7 +104,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     print("END OF PAGES FOR THIS CATEGORY")
                     self.cat_links_index += 1
                     new_cat_link = self.cat_links_list[self.cat_links_index]
-                    self.make_requests_from_url(new_cat_link)
+                    return self.make_requests_from_url(new_cat_link)
 
         if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
             ingredients_flag = html_els.xpath(
@@ -170,12 +173,13 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     else:
                         continue
                 first_url = self.cat_links_list[0]
-                self.make_requests_from_url(first_url)
+                print("FIRST_URL:  ",first_url)
+                return self.make_requests_from_url(first_url)
             else:
-                self.make_requests_from_url(self.links_list[-1])
+                return self.make_requests_from_url(self.links_list[-1])
         else:
             print("RESPONSE_URL:  ", response.url)
-            self.xpaths_parser(response)
+            return self.xpaths_parser(response)
 
     def ingredient_processor(self, ingredients_2_process):
         #short function to process/split text extracted to quantity, ingredient and form.
