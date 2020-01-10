@@ -73,7 +73,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if new_url:
                 cleaned_url = new_url.replace("javascript:void(0)", "")
                 print("CATEGORY_URL:  ", cleaned_url)
-                yield self.make_requests_from_url(cleaned_url)
+                self.make_requests_from_url(cleaned_url)
 
         if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
@@ -84,7 +84,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     try:
                         recipe_query = self.recipe_collection.find({"url": recipe_url})
                         if recipe_query.count() == 0:
-                            yield self.make_requests_from_url(recipe_url)
+                            self.make_requests_from_url(recipe_url)
                         else:
                             continue
                     except pymongo.errors.OperationFailure as OF:
@@ -96,12 +96,12 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if next_page_url:
                 cleaned_url = next_page_url.replace("javascript:void(0)", "")
                 if cleaned_url != "":
-                    yield self.make_requests_from_url(cleaned_url)
+                    self.make_requests_from_url(cleaned_url)
                 else:
                     print("END OF PAGES FOR THIS CATEGORY")
                     self.cat_links_index += 1
                     new_cat_link = self.cat_links_list[self.cat_links_index]
-                    yield self.make_requests_from_url(new_cat_link)
+                    self.make_requests_from_url(new_cat_link)
 
         if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
             ingredients_flag = html_els.xpath(
@@ -164,15 +164,15 @@ class RecipeCrawlerSpider(scrapy.Spider):
             if len(self.cat_links_list) == 0:
                 for cat_links in all_elems.xpath('//*[@id="hubsSimilar"]//div//div/*'):
                     new_url = ''.join(cat_links.xpath("@href").extract())
+                    print("NEW_URL:  ", new_url)
                     if new_url and new_url not in self.cat_links_list:
                         self.cat_links_list.append(new_url)
                     else:
                         continue
                 first_url = self.cat_links_list[0]
-                yield self.make_requests_from_url(first_url)
+                self.make_requests_from_url(first_url)
             else:
-                self.request_counter = 0
-                yield self.make_requests_from_url(self.links_list[-1])
+                self.make_requests_from_url(self.links_list[-1])
         else:
             print("RESPONSE_URL:  ", response.url)
             self.xpaths_parser(response)
