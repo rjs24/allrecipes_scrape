@@ -50,105 +50,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
     def start_requests(self):
         # implement equivalent of a crawlspider in base spider with selenium
         for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse_response, errback=self.error_handler)
-
-    def xpaths_parser(self, response):
-        #parse through html to find xpaths and take appropriate action
-        html_ret = response.text
-        html_els = scrapy.Selector(text=html_ret)
-
-        if html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
-            new_url = ''.join(
-                html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1//a/@href').extract())
-            if new_url:
-                cleaned_url = new_url.replace("javascript:void(0)", "")
-                print("CATEGORY_URL:  ", cleaned_url)
-                self.request_count_handler()
-                if cleaned_url not in self.links_list:
-                    self.links_list.append(cleaned_url)
-                    self.random_sleep_generator()
-                    self.request_counter += 1
-                    yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(), callback=self.parse_response,
-                                         errback=self.error_handler)
-
-        if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
-            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
-                new_url = ''.join(recipe_links.xpath('@href').extract())
-                if new_url:
-                    recipe_url = new_url.replace("javascript:void(0)", "")
-                    print("RECIPE_URL:  ", recipe_url)
-                    try:
-                        recipe_query = self.recipe_collection.find({"url": recipe_url})
-                        if recipe_query.count() == 0 and recipe_url not in self.links_list:
-                            self.request_count_handler()
-                            self.links_list.append(recipe_url)
-                            self.random_sleep_generator()
-                            self.request_counter += 1
-                            yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(),
-                                                 callback=self.parse_response,
-                                                 errback=self.error_handler)
-                        else:
-                            continue
-                    except pymongo.errors.OperationFailure as OF:
-                        print("DB OPERATION FAILURE")
-                else:
-                    continue
-            next_page_url = ''.join(
-                html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
-            if next_page_url:
-                cleaned_url = next_page_url.replace("javascript:void(0)", "")
-                if cleaned_url != "" and cleaned_url not in self.links_list:
-                    self.request_count_handler()
-                    self.links_list.append(recipe_url)
-                    self.random_sleep_generator()
-                    self.request_counter += 1
-                    yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(),
-                                         callback=self.parse_response,
-                                         errback=self.error_handler)
-                else:
-                    print("END OF PAGES FOR THIS CATEGORY")
-                    self.cat_links_index += 1
-                    new_cat_link = self.cat_links_list[self.cat_links_index]
-                    self.request_count_handler()
-                    self.links_list.append(new_cat_link)
-                    self.random_sleep_generator()
-                    self.request_counter += 1
-                    yield scrapy.Request(url=new_cat_link, cookies=self.browser.get_cookies(),
-                                         callback=self.parse_response,
-                                         errback=self.error_handler)
-
-        if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
-            ingredients_flag = html_els.xpath(
-                '//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2/text()').extract()
-            if ingredients_flag == ['\r\n        Ingredients\r\n\r\n            ', '\r\n    ']:
-                item = Recipe_item()
-                html_xpaths_response = scrapy.Selector(response)
-                item['url'] = response.url
-                recipe_nme = ''.join(html_xpaths_response.xpath(
-                    '//*[@id="pageContent"]//div[2]//div//div//div[1]//div//section[1]//div//div[2]//h1//span/text()').extract())
-                item['recipe_name'] = recipe_nme.strip()
-                item['num_serves'] = int(''.join(html_xpaths_response.xpath(
-                    '//*[@id="pageContent"]//div[2]//div//div//div[1]//div//section[2]//h2//small//span/text()').extract()))
-                item['ingredients'] = []
-                item['method_steps'] = []
-
-                ingredients_html = html_xpaths_response.xpath(
-                    '//section[contains(@class, "recipeIngredients")]//ul//li//span/text()').getall()
-
-                for ingredient in ingredients_html:
-                    ingredient_2_process = ingredient
-                    processed_ingredient = self.ingredient_processor(ingredient_2_process)
-                    item['ingredients'].append(processed_ingredient)
-
-                methods_html = html_xpaths_response.xpath(
-                    '//section[contains(@class, "recipeDirections")]//ol//li//span/text()').getall()
-
-                for step_number, methods in enumerate(methods_html):
-                    method = methods
-                    print("method:  ", method)
-                    item['method_steps'].append({"step_num": step_number, "step_text": method})
-
-                yield item
+            yield scrapy.Request(url=url, callback=self.parse, errback=self.error_handler)
 
     def create_browser(self, url_2_get):
         #function to startup new browser and navigate consent
@@ -168,7 +70,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
             except:
                 break
 
-    def parse_response(self, response):
+    def parse(self, response):
         print("parse called: ", response.url)
         if "consent" in str(response.url) or self.request_counter >= 50:
             #handle the consent button
@@ -190,7 +92,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 self.random_sleep_generator()
                 self.request_counter += 1
                 yield scrapy.Request(url=first_url, cookies=self.browser.get_cookies(),
-                                     callback=self.parse_response,
+                                     callback=self.parse,
                                      errback=self.error_handler)
             else:
                 self.request_count_handler()
@@ -198,11 +100,107 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 self.request_counter += 1
                 last_url = self.links_list[-1]
                 yield scrapy.Request(url=last_url, cookies=self.browser.get_cookies(),
-                                     callback=self.parse_response,
+                                     callback=self.parse,
                                      errback=self.error_handler)
         else:
             print("RESPONSE_URL:  ", response.url)
-            return self.xpaths_parser(response)
+            # parse through html to find xpaths and take appropriate action
+            html_ret = response.text
+            html_els = scrapy.Selector(text=html_ret)
+            print("HTML_ELSE:  ", html_els)
+            if html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
+                new_url = ''.join(
+                    html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1//a/@href').extract())
+                if new_url:
+                    cleaned_url = new_url.replace("javascript:void(0)", "")
+                    print("CATEGORY_URL:  ", cleaned_url)
+                    self.request_count_handler()
+                    if cleaned_url not in self.links_list:
+                        self.links_list.append(cleaned_url)
+                        self.random_sleep_generator()
+                        self.request_counter += 1
+                        yield scrapy.Request(url=cleaned_url, cookies=self.browser.get_cookies(),
+                                             callback=self.parse,
+                                             errback=self.error_handler)
+
+            if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
+                for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
+                    new_url = ''.join(recipe_links.xpath('@href').extract())
+                    if new_url:
+                        recipe_url = new_url.replace("javascript:void(0)", "")
+                        print("RECIPE_URL:  ", recipe_url)
+                        try:
+                            recipe_query = self.recipe_collection.find({"url": recipe_url})
+                            if recipe_query.count() == 0 and recipe_url not in self.links_list:
+                                self.request_count_handler()
+                                self.links_list.append(recipe_url)
+                                self.random_sleep_generator()
+                                self.request_counter += 1
+                                yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(),
+                                                     callback=self.parse,
+                                                     errback=self.error_handler)
+                            else:
+                                continue
+                        except pymongo.errors.OperationFailure as OF:
+                            print("DB OPERATION FAILURE", OF)
+                    else:
+                        continue
+                next_page_url = ''.join(
+                    html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
+                if next_page_url:
+                    cleaned_url = next_page_url.replace("javascript:void(0)", "")
+                    if cleaned_url != "" and cleaned_url not in self.links_list:
+                        self.request_count_handler()
+                        self.links_list.append(recipe_url)
+                        self.random_sleep_generator()
+                        self.request_counter += 1
+                        yield scrapy.Request(url=recipe_url, cookies=self.browser.get_cookies(),
+                                             callback=self.parse,
+                                             errback=self.error_handler)
+                    else:
+                        print("END OF PAGES FOR THIS CATEGORY")
+                        self.cat_links_index += 1
+                        new_cat_link = self.cat_links_list[self.cat_links_index]
+                        self.request_count_handler()
+                        self.links_list.append(new_cat_link)
+                        self.random_sleep_generator()
+                        self.request_counter += 1
+                        yield scrapy.Request(url=new_cat_link, cookies=self.browser.get_cookies(),
+                                             callback=self.parse,
+                                             errback=self.error_handler)
+
+            if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
+                ingredients_flag = html_els.xpath(
+                    '//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2/text()').extract()
+                if ingredients_flag == ['\r\n        Ingredients\r\n\r\n            ', '\r\n    ']:
+                    item = Recipe_item()
+                    html_xpaths_response = scrapy.Selector(response)
+                    item['url'] = response.url
+                    recipe_nme = ''.join(html_xpaths_response.xpath(
+                        '//*[@id="pageContent"]//div[2]//div//div//div[1]//div//section[1]//div//div[2]//h1//span/text()').extract())
+                    item['recipe_name'] = recipe_nme.strip()
+                    item['num_serves'] = int(''.join(html_xpaths_response.xpath(
+                        '//*[@id="pageContent"]//div[2]//div//div//div[1]//div//section[2]//h2//small//span/text()').extract()))
+                    item['ingredients'] = []
+                    item['method_steps'] = []
+
+                    ingredients_html = html_xpaths_response.xpath(
+                        '//section[contains(@class, "recipeIngredients")]//ul//li//span/text()').getall()
+
+                    for ingredient in ingredients_html:
+                        ingredient_2_process = ingredient
+                        processed_ingredient = self.ingredient_processor(ingredient_2_process)
+                        item['ingredients'].append(processed_ingredient)
+
+                    methods_html = html_xpaths_response.xpath(
+                        '//section[contains(@class, "recipeDirections")]//ol//li//span/text()').getall()
+
+                    for step_number, methods in enumerate(methods_html):
+                        method = methods
+                        print("method:  ", method)
+                        item['method_steps'].append({"step_num": step_number, "step_text": method})
+
+                    yield item
 
     def ingredient_processor(self, ingredients_2_process):
         #short function to process/split text extracted to quantity, ingredient and form.
