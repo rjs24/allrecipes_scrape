@@ -44,7 +44,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
     def random_sleep_generator(self):
         #quick easy function to generate random sleep when required just before requests
         print("NOW ASLEEP")
-        rand_int = random.randint(2, 13)
+        rand_int = random.randint(3, 10)
         return time.sleep(rand_int)
 
     def start_requests(self):
@@ -103,11 +103,11 @@ class RecipeCrawlerSpider(scrapy.Spider):
                                      callback=self.parse,
                                      errback=self.error_handler)
         else:
-            print("RESPONSE_URL:  ", response.url)
+            print("RESPONSE_URL:  %s, %s" % (response.url, response.status))
             # parse through html to find xpaths and take appropriate action
             html_ret = response.text
+            print("HTML_RET:  ", html_ret)
             html_els = scrapy.Selector(text=html_ret)
-            print("HTML_ELSE:  ", html_els)
             if html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
                 new_url = ''.join(
                     html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1//a/@href').extract())

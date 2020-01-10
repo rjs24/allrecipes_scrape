@@ -19,7 +19,7 @@ BOT_NAME = 'allrecipes'
 
 SPIDER_MODULES = ['allrecipes.spiders']
 NEWSPIDER_MODULE = 'allrecipes.spiders'
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
+#USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'allrecipes (+http://www.yourdomain.com)'
@@ -28,15 +28,15 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 6
+CONCURRENT_REQUESTS = 10
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 5
+DOWNLOAD_DELAY = 8
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 8
-CONCURRENT_REQUESTS_PER_IP = 4
+CONCURRENT_REQUESTS_PER_DOMAIN = 1
+#CONCURRENT_REQUESTS_PER_IP = 10
 
 # PROXY
 PROXY = 'http://127.0.0.1:8888/?noconnect'
@@ -46,7 +46,7 @@ API_SCRAPOXY = 'http://127.0.0.1:8889/api'
 #API_SCRAPOXY_PASSWORD = 'CHANGE_THIS_PASSWORD'
 
 # BLACKLISTING
-#BLACKLIST_HTTP_STATUS_CODES = [ 503 ]
+BLACKLIST_HTTP_STATUS_CODES = [ 503 ]
 
 DOWNLOADER_MIDDLEWARES = {
     'scrapoxy.downloadmiddlewares.proxy.ProxyMiddleware': 100,
