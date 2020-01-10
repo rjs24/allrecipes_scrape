@@ -36,7 +36,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
         print("REQUEST_COUNTER")
         if self.request_counter >= 50:
             self.browser.close()
-            self.browser = self.create_browser(start_urls[0])
+            self.browser = self.create_browser(self.start_urls[0])
             return self.browser
         elif self.request_counter < 50:
             return self.browser
