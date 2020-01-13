@@ -8,6 +8,7 @@ from scrapy import Spider
 import scrapy
 from ..items import Recipe_item
 import time
+import re
 import pymongo
 from scrapy.utils.project import get_project_settings
 import random
@@ -25,6 +26,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
         self.db_connect = self.connection[self.settings.get('MONGODB_DB')]
         self.recipe_collection = self.db_connect['recipes']
         time.sleep(5)
+        self.url_retry_counter = 0
 
     def random_sleep_generator(self):
         #quick easy function to generate random sleep when required just before requests
@@ -48,22 +50,14 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 new_url = ''.join(cat_links.xpath("@href").extract())
                 print("NEW_URL:  ", new_url)
                 if new_url:
-                    yield scrapy.Request(url=new_url, callback=self.parse, errback=self.error_handler)
+                    strip_numbers_from_url = re.sub("\d", "", new_url)
+                    jump_2_list_url = strip_numbers_from_url.replace("o_is=RecLP_MostPop_", "page=2")
+                    yield scrapy.Request(url=jump_2_list_url, callback=self.parse, errback=self.error_handler)
                     self.random_sleep_generator()
                 else:
                     continue
 
-        if html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
-            new_url = ''.join(
-                html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1//a/@href').extract())
-            if new_url:
-                cleaned_url = new_url.replace("javascript:void(0)", "")
-                print("CATEGORY_URL:  ", cleaned_url)
-                if cleaned_url:
-                    yield scrapy.Request(url=cleaned_url, callback=self.parse, errback=self.error_handler)
-                    self.random_sleep_generator()
-
-        if html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*'):
+        elif html_els.xpath('//*[@id="sectionTopRecipes"]//div/*') and "page=" in str(response.url):
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
                 new_url = ''.join(recipe_links.xpath('@href').extract())
                 if new_url:
@@ -80,18 +74,19 @@ class RecipeCrawlerSpider(scrapy.Spider):
                         print("DB OPERATION FAILURE", OF)
                 else:
                     continue
-            next_page_url = ''.join(
-                html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
-            if next_page_url:
-                cleaned_url = next_page_url.replace("javascript:void(0)", "")
-                if cleaned_url != "":
-                    yield scrapy.Request(url=recipe_url, callback=self.parse, errback=self.error_handler)
-                    self.random_sleep_generator()
 
-        if html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
+        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href'):
+            next_page_url = ''.join(
+            html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
+            cleaned_url = next_page_url.replace("javascript:void(0)", "")
+            if cleaned_url != "":
+                yield scrapy.Request(url=cleaned_url, callback=self.parse, errback=self.error_handler)
+                self.random_sleep_generator()
+
+        elif html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
             ingredients_flag = html_els.xpath(
                 '//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2/text()').extract()
-            if ingredients_flag == ['\r\n        Ingredients\r\n\r\n            ', '\r\n    ']:
+            if "Ingredients" in ''.join(ingredients_flag):
                 item = Recipe_item()
                 html_xpaths_response = scrapy.Selector(response)
                 item['url'] = response.url
@@ -120,6 +115,15 @@ class RecipeCrawlerSpider(scrapy.Spider):
                     item['method_steps'].append({"step_num": step_number, "step_text": method})
 
                 yield item
+        else:
+            while last_response_url_retry < 5:
+                print("IN RETRY LOOP")
+                last_response_url_retry = response.url
+                self.url_retry_counter += 1
+                yield scrapy.Request(url=last_response_url_retry, callback=self.parse, errback=self.error_handler)
+                self.random_sleep_generator()
+            else:
+                return None
 
     def ingredient_processor(self, ingredients_2_process):
         #short function to process/split text extracted to quantity, ingredient and form.

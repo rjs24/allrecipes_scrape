@@ -7,7 +7,7 @@
 from scrapy.conf import settings
 from scrapy import signals
 from scrapy.http import HtmlResponse
-from selenium.webdriver import Firefox
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as expected
@@ -16,15 +16,16 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import time
 options = Options()
 options.add_argument('-headless')
-desired_caps = DesiredCapabilities.FIREFOX.copy()
+desired_caps = DesiredCapabilities.FIREFOX
 desired_caps['marionette'] = True
 desired_caps['acceptSslCerts'] = True
-desired_caps['firefox.cli.args'] = [
-     '--proxy=%s' % settings['API_SCRAPROXY'],
+desired_caps['remote.cli.args'] = [
+     '--proxy=%s' % 'http://localhost:8888',
      '--proxy-type=http',
      '--proxy-auth=%s' % settings['API_SCRAPOXY_PASSWORD']
      ]
-browser = Firefox(options=options, capabilities=desired_caps)
+remote_serv = 'http://localhost:8888'
+browser = webdriver.Remote(remote_serv, options=options, desired_capabilities=desired_caps)
 wait_period = WebDriverWait(browser, timeout=15)
 
 class AllrecipesSpiderMiddleware(object):
