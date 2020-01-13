@@ -4,7 +4,7 @@
 #
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-
+from scrapy.conf import settings
 from scrapy import signals
 from scrapy.http import HtmlResponse
 from selenium.webdriver import Firefox
@@ -12,10 +12,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as expected
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import time
 options = Options()
 options.add_argument('-headless')
-browser = Firefox(options=options)
+desired_caps = DesiredCapabilities.FIREFOX.copy()
+desired_caps['marionette'] = True
+desired_caps['acceptSslCerts'] = True
+desired_caps['firefox.cli.args'] = [
+     '--proxy=%s' % settings['API_SCRAPROXY'],
+     '--proxy-type=http',
+     '--proxy-auth=%s' % settings['API_SCRAPOXY_PASSWORD']
+     ]
+browser = Firefox(options=options, capabilities=desired_caps)
 wait_period = WebDriverWait(browser, timeout=15)
 
 class AllrecipesSpiderMiddleware(object):
@@ -90,6 +99,7 @@ class AllrecipesDownloaderMiddleware(object):
         #   installed downloader middleware will be called
         if "consent" in str(request.url):
             while "consent" in str(request.url):
+                print("IN WHILE")
                 try:
                     browser.get(request.url)
                     wait_period.until(

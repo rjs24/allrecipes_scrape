@@ -55,7 +55,8 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': None,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_useragents.downloadermiddlewares.useragents.UserAgentsMiddleware': 500,
-    'scrapoxy.downloadmiddlewares.blacklist.BlacklistDownloaderMiddleware': 950,
+    'scrapoxy.downloadmiddlewares.blacklist.BlacklistDownloaderMiddleware': 600,
+    'allrecipes.middlewares.AllrecipesDownloaderMiddleware': 700
 }
 
 USER_AGENTS = [
@@ -98,9 +99,9 @@ USER_AGENTS = [
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-SPIDER_MIDDLEWARES = {
-    'allrecipes.middlewares.AllrecipesSpiderMiddleware': 543,
-}
+#SPIDER_MIDDLEWARES = {
+#    'allrecipes.middlewares.AllrecipesSpiderMiddleware': 543,
+#}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -117,7 +118,7 @@ SPIDER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'allrecipes.pipelines.AllrecipesPipeline': 300,
+    'allrecipes.pipelines.AllrecipesPipeline': 750,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
