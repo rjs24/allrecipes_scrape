@@ -6,7 +6,17 @@
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
-
+from scrapy.http import HtmlResponse
+from selenium.webdriver import Firefox
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.support import expected_conditions as expected
+from selenium.webdriver.support.wait import WebDriverWait
+import time
+options = Options()
+options.add_argument('-headless')
+browser = Firefox(options=options)
+wait_period = WebDriverWait(browser, timeout=15)
 
 class AllrecipesSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -78,7 +88,22 @@ class AllrecipesDownloaderMiddleware(object):
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        return None
+        if "consent" in str(request.url):
+            while "consent" in str(request.url):
+                try:
+                    browser.get(request.url)
+                    wait_period.until(
+                        expected.visibility_of_element_located(
+                            (By.CSS_SELECTOR, '#consentButtonContainer > button'))).click()
+                    time.sleep(3)
+                    body = browser.page_source
+                    return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
+                except:
+                    break
+        else:
+            browser.get(request.url)
+            body = browser.page_source
+            return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
