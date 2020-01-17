@@ -13,19 +13,24 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as expected
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 import time
 options = Options()
 options.add_argument('-headless')
 desired_caps = DesiredCapabilities.FIREFOX
 desired_caps['marionette'] = True
 desired_caps['acceptSslCerts'] = True
-desired_caps['remote.cli.args'] = [
-     '--proxy=%s' % 'http://localhost:8888',
-     '--proxy-type=http',
-     '--proxy-auth=%s' % settings['API_SCRAPOXY_PASSWORD']
-     ]
-remote_serv = 'http://localhost:8888'
-browser = webdriver.Remote(remote_serv, options=options, desired_capabilities=desired_caps)
+# desired_caps['remote.cli.args'] = [
+#      '--proxy=%s' % 'http://localhost:8888',
+#      '--proxy-type=http',
+#      '--proxy-auth=%s' % settings['API_SCRAPOXY_PASSWORD']
+#      ]
+prx = Proxy()
+prx.proxy_type = ProxyType.MANUAL
+prx.http_proxy = settings['PROXY']
+prx.add_to_capabilities(desired_caps)
+#remote_serv = 'http://localhost:8888'
+browser = webdriver.Remote(options=options, desired_capabilities=desired_caps)
 wait_period = WebDriverWait(browser, timeout=15)
 
 class AllrecipesSpiderMiddleware(object):
