@@ -44,9 +44,9 @@ class RecipeCrawlerSpider(scrapy.Spider):
         # parse through html to find xpaths and take appropriate action
         html_ret = response.text
         html_els = scrapy.Selector(text=html_ret)
-        if html_els.xpath('//*[@id="hubsSimilar"]//div/*'):
-            for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div/*'):
-                new_url = ''.join(cat_links.xpath("/div/@href").extract())
+        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
+            for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
+                new_url = ''.join(cat_links.xpath("@href").extract())
                 print("NEW_URL:  ", new_url)
                 if new_url:
                     yield scrapy.Request(url=new_url, callback=self.parse, errback=self.error_handler)
