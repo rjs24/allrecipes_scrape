@@ -123,6 +123,7 @@ class AllrecipesDownloaderMiddleware(object):
         else:
             browser.get(request.url)
             body = browser.page_source
+            print("URL IN SELENIUM:  ", browser.current_url)
             return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
 
     def process_response(self, request, response, spider):
