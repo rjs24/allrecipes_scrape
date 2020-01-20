@@ -34,9 +34,7 @@ desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
     }
 desired_caps['marionette'] = True
 desired_caps['acceptSslCerts'] = True
-
-browser = webdriver.Remote(PROXY, options=options, desired_capabilities=desired_caps)
-wait_period = WebDriverWait(browser, timeout=15)
+browser = None
 
 class AllrecipesSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -108,6 +106,8 @@ class AllrecipesDownloaderMiddleware(object):
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
+        browser = webdriver.Remote(PROXY, options=options, desired_capabilities=desired_caps)
+        wait_period = WebDriverWait(browser, timeout=15)
         if "consent" in str(request.url):
             while "consent" in str(request.url):
                 print("IN WHILE")
