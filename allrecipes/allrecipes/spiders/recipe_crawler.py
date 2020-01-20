@@ -44,9 +44,9 @@ class RecipeCrawlerSpider(scrapy.Spider):
         # parse through html to find xpaths and take appropriate action
         html_ret = response.text
         html_els = scrapy.Selector(text=html_ret)
-        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
-            for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
-                new_url = ''.join(cat_links.xpath("@href").extract())
+        if html_els.xpath('//*[@id="hubsSimilar"]//div/*'):
+            for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div/*'):
+                new_url = ''.join(cat_links.xpath("/div/@href").extract())
                 print("NEW_URL:  ", new_url)
                 if new_url:
                     yield scrapy.Request(url=new_url, callback=self.parse, errback=self.error_handler)
@@ -57,14 +57,15 @@ class RecipeCrawlerSpider(scrapy.Spider):
         elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
             recipe_cat_url = ''.join(html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a/@href').extract())
             if 'page=2' in recipe_cat_url:
+                print("RECIPE_CAT_URL: ", recipe_cat_url)
                 yield scrapy.Request(url=recipe_cat_url, callback=self.parse, errback=self.error_handler)
                 self.random_sleep_generator()
             else:
                 print("non valid recipe_cat_url", recipe_cat_url)
 
-        elif html_els.xpath('//*[@id="sectionTopRecipes"]//div/*') and "page=" in str(response.url):
-            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
-                new_url = ''.join(recipe_links.xpath('@href').extract())
+        elif html_els.xpath('//*[@id="sectionTopRecipes"]/*'):
+            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]/*'):
+                new_url = ''.join(recipe_links.xpath('div//div[1]/@href').extract())
                 if new_url:
                     recipe_url = new_url.replace("javascript:void(0)", "")
                     print("RECIPE_URL:  ", recipe_url)
