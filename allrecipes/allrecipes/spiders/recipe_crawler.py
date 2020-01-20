@@ -46,7 +46,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
         # parse through html to find xpaths and take appropriate action
         html_ret = response.text
         html_els = scrapy.Selector(text=html_ret)
-        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*') and len(self.cat_links_list) == 0:
+        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*') and len(self.cat_links_list) == 0 and response.url == "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
             for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
                 category_url = ''.join(cat_links.xpath("@href").extract())
                 print("CATEGORY_URL:  ", category_url)
@@ -87,7 +87,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 else:
                     continue
 
-        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href') and str(response.url) != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href') and "page=" in str(response.url):
             next_page_url = ''.join(
             html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
             cleaned_url = next_page_url.replace("javascript:void(0)", "")
