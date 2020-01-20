@@ -8,7 +8,6 @@ from scrapy import Spider
 import scrapy
 from ..items import Recipe_item
 import time
-import re
 import pymongo
 from scrapy.utils.project import get_project_settings
 import random
@@ -50,12 +49,18 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 new_url = ''.join(cat_links.xpath("@href").extract())
                 print("NEW_URL:  ", new_url)
                 if new_url:
-                    strip_numbers_from_url = re.sub("\d", "", new_url)
-                    jump_2_list_url = strip_numbers_from_url.replace("o_is=RecLP_MostPop_", "page=2")
-                    yield scrapy.Request(url=jump_2_list_url, callback=self.parse, errback=self.error_handler)
+                    yield scrapy.Request(url=new_url, callback=self.parse, errback=self.error_handler)
                     self.random_sleep_generator()
                 else:
                     continue
+
+        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a'):
+            recipe_cat_url = ''.join(html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a/@href').extract())
+            if 'page=2' in recipe_cat_url:
+                yield scrapy.Request(url=recipe_cat_url, callback=self.parse, errback=self.error_handler)
+                self.random_sleep_generator()
+            else:
+                print("non valid recipe_cat_url", recipe_cat_url)
 
         elif html_els.xpath('//*[@id="sectionTopRecipes"]//div/*') and "page=" in str(response.url):
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
