@@ -50,8 +50,9 @@ class RecipeCrawlerSpider(scrapy.Spider):
             for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
                 category_url = ''.join(cat_links.xpath("@href").extract())
                 print("CATEGORY_URL:  ", category_url)
-                self.cat_links_list.append(category_url)
-                if len(self.cat_links_list) == 12:
+                if category_url != '':
+                    self.cat_links_list.append(category_url)
+                elif len(self.cat_links_list) == 12:
                     kickoff_cat_url = self.cat_links_list[0]
                     self.cats_links_index += 1
                     yield scrapy.Request(url=kickoff_cat_url, callback=self.parse, errback=self.error_handler)
@@ -68,9 +69,9 @@ class RecipeCrawlerSpider(scrapy.Spider):
             else:
                 print("non valid recipe_cat_url", recipe_cat_url)
 
-        elif html_els.xpath('//*[@id="sectionTopRecipes"]/*') and "page=" in str(response.url):
-            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]/*'):
-                new_url = ''.join(recipe_links.xpath('div//div[1]/@href').extract())
+        elif html_els.xpath('//*[@id="sectionTopRecipes"]/div//div/*') and str(response.url) != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]///div//div[1]/*'):
+                new_url = ''.join(recipe_links.xpath('@href').extract())
                 if new_url:
                     recipe_url = new_url.replace("javascript:void(0)", "")
                     print("RECIPE_URL:  ", recipe_url)
