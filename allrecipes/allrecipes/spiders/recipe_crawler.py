@@ -87,7 +87,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 else:
                     continue
 
-        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href'):
+        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href') and str(response.url) != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
             next_page_url = ''.join(
             html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//div[3]//a[1]/@href').extract())
             cleaned_url = next_page_url.replace("javascript:void(0)", "")
@@ -101,9 +101,10 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 yield scrapy.Request(url=new_cat_url, callback=self.parse, errback=self.error_handler)
                 self.random_sleep_generator()
 
-        elif html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
+        elif html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2') and "page=" not in str(response.url):
             ingredients_flag = html_els.xpath(
                 '//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2/text()').extract()
+            print("INGREDIENTS_FLAG: ",ingredients_flag)
             if "Ingredients" in ''.join(ingredients_flag):
                 item = Recipe_item()
                 html_xpaths_response = scrapy.Selector(response)
