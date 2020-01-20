@@ -69,8 +69,8 @@ class RecipeCrawlerSpider(scrapy.Spider):
             else:
                 print("non valid recipe_cat_url", recipe_cat_url)
 
-        elif html_els.xpath('//*[@id="sectionTopRecipes"]/div//div/*') and str(response.url) != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
-            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]///div//div[1]/*'):
+        elif html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*') and str(response.url) != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+            for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
                 new_url = ''.join(recipe_links.xpath('@href').extract())
                 if new_url:
                     recipe_url = new_url.replace("javascript:void(0)", "")
