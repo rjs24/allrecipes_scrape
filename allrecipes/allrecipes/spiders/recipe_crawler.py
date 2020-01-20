@@ -116,7 +116,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
 
                 yield item
         else:
-            while last_response_url_retry < 5:
+            while self.url_retry_counter < 5:
                 print("IN RETRY LOOP")
                 last_response_url_retry = response.url
                 self.url_retry_counter += 1

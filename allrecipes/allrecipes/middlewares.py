@@ -105,7 +105,7 @@ class AllrecipesDownloaderMiddleware(object):
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        browser = webdriver.Remote(PROXY, executable_path="/usr/bin/geckodriver", keep_alive=True, options=options, desired_capabilities=desired_caps)
+        browser = webdriver.Remote(executable_path='/usr/bin/geckodriver', proxy=PROXY, timeout=60, options=options, desired_capabilities=desired_caps)
         wait_period = WebDriverWait(browser, timeout=15)
         if "consent" in str(request.url):
             while "consent" in str(request.url):
