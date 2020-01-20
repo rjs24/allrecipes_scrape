@@ -26,6 +26,8 @@ class RecipeCrawlerSpider(scrapy.Spider):
         self.recipe_collection = self.db_connect['recipes']
         time.sleep(5)
         self.url_retry_counter = 0
+        self.cat_links_list = []
+        self.cats_links_index = 0
 
     def random_sleep_generator(self):
         #quick easy function to generate random sleep when required just before requests
@@ -44,17 +46,20 @@ class RecipeCrawlerSpider(scrapy.Spider):
         # parse through html to find xpaths and take appropriate action
         html_ret = response.text
         html_els = scrapy.Selector(text=html_ret)
-        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*') and response.url == "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*') and len(self.cat_links_list) == 0:
             for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
-                new_url = ''.join(cat_links.xpath("@href").extract())
-                print("NEW_URL:  ", new_url)
-                if new_url:
-                    yield scrapy.Request(url=new_url, callback=self.parse, errback=self.error_handler)
+                category_url = ''.join(cat_links.xpath("@href").extract())
+                print("CATEGORY_URL:  ", category_url)
+                self.cat_links_list.append(category_url)
+                if len(self.cat_links_list) == 12:
+                    kickoff_cat_url = self.cat_links_list[0]
+                    self.cats_links_index += 1
+                    yield scrapy.Request(url=kickoff_cat_url, callback=self.parse, errback=self.error_handler)
                     self.random_sleep_generator()
                 else:
                     continue
 
-        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a') and "o_is=RecLP_MostPop" in response.url:
+        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a') and response.url != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
             recipe_cat_url = ''.join(html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a/@href').extract())
             if 'page=2' in recipe_cat_url:
                 print("RECIPE_CAT_URL: ", recipe_cat_url)
@@ -87,6 +92,12 @@ class RecipeCrawlerSpider(scrapy.Spider):
             cleaned_url = next_page_url.replace("javascript:void(0)", "")
             if cleaned_url != "":
                 yield scrapy.Request(url=cleaned_url, callback=self.parse, errback=self.error_handler)
+                self.random_sleep_generator()
+            else:
+                print("END OF PAGES FOR THIS CATEGORY")
+                new_cat_url = self.cat_links_list[self.cats_links_index]
+                self.cats_links_index += 1
+                yield scrapy.Request(url=new_cat_url, callback=self.parse, errback=self.error_handler)
                 self.random_sleep_generator()
 
         elif html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2'):
