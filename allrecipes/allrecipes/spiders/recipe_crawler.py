@@ -46,7 +46,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
         # parse through html to find xpaths and take appropriate action
         html_ret = response.text
         html_els = scrapy.Selector(text=html_ret)
-        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*') and len(self.cat_links_list) == 0 and response.url == "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+        if html_els.xpath('//*[@id="hubsSimilar"]//div//div/*') and len(self.cat_links_list) == 0 and response.url == "http://allrecipes.co.uk/recipes/":
             for cat_links in html_els.xpath('//*[@id="hubsSimilar"]//div//div/*'):
                 category_url = ''.join(cat_links.xpath("@href").extract())
                 print("CATEGORY_URL:  ", category_url)
@@ -60,7 +60,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 else:
                     continue
 
-        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a') and response.url != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+        elif html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a') and "o_is=RecLP_MostPop_" in response.url:
             recipe_cat_url = ''.join(html_els.xpath('//*[@id="pageContent"]//div[1]//div[1]//section[1]//h1/a/@href').extract())
             if 'page=2' in recipe_cat_url:
                 print("RECIPE_CAT_URL: ", recipe_cat_url)
@@ -69,7 +69,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
             else:
                 print("non valid recipe_cat_url", recipe_cat_url)
 
-        elif html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*') and str(response.url) != "http://allrecipes.co.uk/recipes/?o_is=LV_BC":
+        elif html_els.xpath('//*[@id="sectionTopRecipes"]//div//div/*') and "page=" in response.url:
             for recipe_links in html_els.xpath('//*[@id="sectionTopRecipes"]//div//div[1]/*'):
                 new_url = ''.join(recipe_links.xpath('@href').extract())
                 if new_url:
