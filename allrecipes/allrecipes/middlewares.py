@@ -17,9 +17,7 @@ from selenium.webdriver.common.proxy import Proxy, ProxyType
 import time
 options = Options()
 options.add_argument('-headless')
-#desired_caps = DesiredCapabilities.FIREFOX
-#desired_caps['marionette'] = True
-#desired_caps['acceptSslCerts'] = True
+
 PROXY = settings['PROXY']
 desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
     "httpProxy":PROXY,
@@ -34,6 +32,9 @@ desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
     }
 desired_caps['marionette'] = True
 desired_caps['acceptSslCerts'] = True
+browser = webdriver.Firefox(executable_path='/usr/bin/geckodriver', proxy=PROXY, timeout=60, options=options,
+                            desired_capabilities=desired_caps)
+wait_period = WebDriverWait(browser, timeout=15)
 
 class AllrecipesSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -105,8 +106,7 @@ class AllrecipesDownloaderMiddleware(object):
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        browser = webdriver.Remote(executable_path='/usr/bin/geckodriver', proxy=PROXY, timeout=60, options=options, desired_capabilities=desired_caps)
-        wait_period = WebDriverWait(browser, timeout=15)
+
         if "consent" in str(request.url):
             while "consent" in str(request.url):
                 print("IN WHILE")
