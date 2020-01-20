@@ -28,12 +28,18 @@ class RecipeCrawlerSpider(scrapy.Spider):
         self.url_retry_counter = 0
         self.cat_links_list = []
         self.cats_links_index = 0
+        self.req_counter = 0
 
     def random_sleep_generator(self):
         #quick easy function to generate random sleep when required just before requests
         print("NOW ASLEEP")
-        rand_int = random.randint(3, 10)
-        return time.sleep(rand_int)
+        self.req_counter += 1
+        if self.req_counter %10 == 0:
+            long_rand_int = random.randint(25, 120)
+            return time.sleep(long_rand_int)
+        else:
+            rand_int = random.randint(3, 10)
+            return time.sleep(rand_int)
 
     def start_requests(self):
         # implement equivalent of a crawlspider in base spider with selenium
