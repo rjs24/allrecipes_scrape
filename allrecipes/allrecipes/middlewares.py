@@ -21,20 +21,24 @@ options.add_argument('-headless')
 #desired_caps['marionette'] = True
 #desired_caps['acceptSslCerts'] = True
 PROXY = settings['PROXY']
-desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
-    "httpProxy":PROXY,
-    "ftpProxy":PROXY,
-    "sslProxy":PROXY,
-    "noProxy":None,
-    "proxyType":"MANUAL",
-    "class":"org.openqa.selenium.Proxy",
-    "autodetect":False,
-    "socksUsername": settings['SCRAPOXY_USERNAME'],
-    "socksPassword": settings['API_SCRAPOXY_PASSWORD']
-    }
-desired_caps['marionette'] = True
-desired_caps['acceptSslCerts'] = True
-browser = None
+# desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
+#     "httpProxy":PROXY,
+#     "ftpProxy":PROXY,
+#     "sslProxy":PROXY,
+#     "noProxy":None,
+#     "proxyType":"MANUAL",
+#     "class":"org.openqa.selenium.Proxy",
+#     "autodetect":False,
+#     "socksUsername": settings['SCRAPOXY_USERNAME'],
+#     "socksPassword": settings['API_SCRAPOXY_PASSWORD']
+#     }
+# desired_caps['marionette'] = True
+# desired_caps['acceptSslCerts'] = True
+fire_p = webdriver.FirefoxProfile()
+fire_p.set_preference("network.proxy.type", 1)
+fire_p.set_preference("network.proxy.sock", PROXY),
+fire_p.set_preference("network.proxy.socks_port", 3128)
+fire_p.update_preferences()
 
 class AllrecipesSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
