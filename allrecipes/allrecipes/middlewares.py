@@ -120,11 +120,12 @@ class AllrecipesDownloaderMiddleware(object):
                     return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
                 except:
                     break
-        else:
+        elif "consent" not in str(request.url):
             browser.get(request.url)
             body = browser.page_source
-            print("URL IN SELENIUM:  ", browser.current_url)
             return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
+        else:
+            return None
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
