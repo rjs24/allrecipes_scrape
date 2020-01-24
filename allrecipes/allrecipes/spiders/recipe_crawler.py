@@ -59,6 +59,7 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 if category_url != '':
                     self.cat_links_list.append(category_url)
                 elif len(self.cat_links_list) == 12:
+                    #change index here accoding to which box it runs on
                     kickoff_cat_url = self.cat_links_list[0]
                     self.cats_links_index += 1
                     yield scrapy.Request(url=kickoff_cat_url, callback=self.parse, errback=self.error_handler)
@@ -101,11 +102,11 @@ class RecipeCrawlerSpider(scrapy.Spider):
                 yield scrapy.Request(url=cleaned_url, callback=self.parse, errback=self.error_handler)
                 self.random_sleep_generator()
             else:
-                print("END OF PAGES FOR THIS CATEGORY")
-                new_cat_url = self.cat_links_list[self.cats_links_index]
-                self.cats_links_index += 1
-                yield scrapy.Request(url=new_cat_url, callback=self.parse, errback=self.error_handler)
-                self.random_sleep_generator()
+                print("END OF PAGES FOR THIS CATEGORY AND THEREFORE END OF SCRAPE ON THIS BOX")
+                # new_cat_url = self.cat_links_list[self.cats_links_index]
+                # self.cats_links_index += 1
+                # yield scrapy.Request(url=new_cat_url, callback=self.parse, errback=self.error_handler)
+                # self.random_sleep_generator()
 
         elif html_els.xpath('//*[@id="pageContent"]//div[2]//div/div//div[1]//div//section[2]//h2') and "page=" not in str(response.url):
             ingredients_flag = html_els.xpath(

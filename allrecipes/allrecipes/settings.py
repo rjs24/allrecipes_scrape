@@ -8,12 +8,32 @@ from .local_settings import *
 #     https://doc.scrapy.org/en/latest/topics/settings.html
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-
+import requests
+import json
+from datetime import datetime
+import random
 #DB settings
 
 #MONGODB_PORT=27017
 #MONGODB_DB='db_name'
 #MONGODB_URI="mongodb://username:password@ip_address:27017/admin"
+
+def get_new_proxy_list():
+        # function to return new proxy from local flask service
+    proxy_gen_url = "http://127.0.0.1:5000/proxy"
+    proxy_info = requests.get(proxy_gen_url)
+    proxy_json = json.loads(proxy_info)
+    return proxy_json
+
+def pick_proxy():
+    current_time = datetime.now()
+    datetm_str = current_time.strftime("%M")
+    prx_list = 0
+    if datetm_str == "30" or datetm_str == "00" or prx_list == 0:
+        prx_list = get_new_proxy_list()
+        return random.choice(prx_list)
+    else:
+        return random.choice(prx_list)
 
 BOT_NAME = 'allrecipes'
 
@@ -39,23 +59,13 @@ DOWNLOAD_DELAY = 6
 CONCURRENT_REQUESTS_PER_IP = 10
 
 # PROXY
-PROXY = 'http://127.0.0.1:8888/?noconnect'
-
-# SCRAPOXY
-API_SCRAPOXY = 'http://127.0.0.1:8889/api'
-#API_SCRAPOXY_PASSWORD = 'CHANGE_THIS_PASSWORD'
-
-# BLACKLISTING
-BLACKLIST_HTTP_STATUS_CODES = [ 503, 429 ]
+PROXY = pick_proxy()
+print("PROXY IN settings.py:  ", PROXY)
 
 DOWNLOADER_MIDDLEWARES = {
-    'scrapoxy.downloadmiddlewares.proxy.ProxyMiddleware': 100,
-    'scrapoxy.downloadmiddlewares.wait.WaitMiddleware': 101,
-    'scrapoxy.downloadmiddlewares.scale.ScaleMiddleware': 102,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': None,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_useragents.downloadermiddlewares.useragents.UserAgentsMiddleware': 500,
-    'scrapoxy.downloadmiddlewares.blacklist.BlacklistDownloaderMiddleware': 600,
     'allrecipes.middlewares.AllrecipesDownloaderMiddleware': 700
 }
 

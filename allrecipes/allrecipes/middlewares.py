@@ -13,11 +13,11 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as expected
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.common.proxy import Proxy, ProxyType
 import time
+
+
 options = Options()
 options.add_argument('-headless')
-
 PROXY = settings['PROXY']
 desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
     "httpProxy":PROXY,
@@ -27,8 +27,6 @@ desired_caps = DesiredCapabilities.FIREFOX['proxy'] = {
     "proxyType":"MANUAL",
     "class":"org.openqa.selenium.Proxy",
     "autodetect":False,
-    "socksUsername": settings['SCRAPOXY_USERNAME'],
-    "socksPassword": settings['API_SCRAPOXY_PASSWORD']
     }
 desired_caps['marionette'] = True
 desired_caps['acceptSslCerts'] = True
@@ -111,6 +109,7 @@ class AllrecipesDownloaderMiddleware(object):
             while "consent" in str(request.url):
                 print("IN WHILE")
                 try:
+                    browser.set_page_load_timeout(30)
                     browser.get(request.url)
                     wait_period.until(
                         expected.visibility_of_element_located(
@@ -118,12 +117,22 @@ class AllrecipesDownloaderMiddleware(object):
                     time.sleep(3)
                     body = browser.page_source
                     return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
+                except TimeoutError as err:
+                    print(err)
+                    self.PROXY = settings['PROXY']
+                    break
                 except:
                     break
         elif "consent" not in str(request.url):
-            browser.get(request.url)
-            body = browser.page_source
-            return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
+            try:
+                browser.set_page_load_timeout(30)
+                browser.get(request.url)
+                body = browser.page_source
+                return HtmlResponse(browser.current_url, body=body, encoding='utf-8', request=request)
+            except TimeoutError as err:
+                print(err)
+                self.PROXY = settings['PROXY']
+                return request
         else:
             return None
 
